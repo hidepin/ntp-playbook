@@ -1,11 +1,16 @@
 ---
 # file: roles/common/tasks/main.yml
 - name: packages install
-  apt: name={{item}} state=present
+  yum: name={{item}} state=present
   with_items:
-    - openssh-client
+    - openssh-clients
+    - libselinux-python
     - ntpdate
     - ntp
+
+- name: disable selinux
+  selinux: state=disabled
+  when: ansible_selinux.config_mode is not defined or ansible_selinux.config_mode != "disabled"
 
 - name: ntp setting
   template: src=ntp.conf.j2 dest=/etc/ntp.conf
@@ -13,7 +18,7 @@
     - ntpd restart
 
 - name: ntp start
-  service: name=ntp state=started enabled=yes
+  service: name=ntpd state=started enabled=yes
 
 - name: generate hosts files
   lineinfile: dest=/etc/hosts regexp='^{{item}}.*' line="{{item}} {{hostvars[item].ansible_fqdn}} {{hostvars[item].ansible_hostname}}" state=present
